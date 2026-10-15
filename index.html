@@ -9,7 +9,7 @@
 <meta name="apple-mobile-web-app-title" content="地下城II圖鑑">
 <link rel="icon" type="image/png" sizes="64x64" href="icon-64.png">
 <link rel="apple-touch-icon" sizes="180x180" href="icon-180.png">
-<link rel="manifest" href="manifest.json">
+<link rel="manifest" href="manifest.json?v=2">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;500;700;900&family=Silkscreen&display=swap">
 <style>
@@ -33,6 +33,8 @@ header.top{position:sticky;top:env(safe-area-inset-top,0px);z-index:5;background
 header.top .wrap{padding-block:12px 10px;display:flex;flex-direction:column;gap:10px}
 .brand{display:flex;align-items:baseline;justify-content:space-between;gap:12px}
 .brand h1{margin:0;font-size:20px;font-weight:900;letter-spacing:.02em;text-wrap:balance}
+.brand h1{display:flex;align-items:center;gap:8px}
+.logo{width:30px;height:30px;border-radius:7px;image-rendering:pixelated}
 .brand small{font-family:var(--f-display);font-size:11px;color:var(--unique);letter-spacing:.08em;white-space:nowrap}
 #q{width:100%;font:inherit;font-size:16px;padding:10px 14px;border-radius:10px;border:1px solid var(--line);background:var(--surface);color:var(--ink)}
 #q:focus-visible,button:focus-visible,select:focus-visible{outline:2px solid var(--unique);outline-offset:2px}
@@ -74,7 +76,7 @@ dd{margin:0;min-width:0}
 
 </head><body>
 <header class="top"><div class="wrap">
-  <div class="brand"><h1>地下城II 圖鑑</h1><small id="tag">UNIQUE ×116</small></div>
+  <div class="brand"><h1><img class="logo" src="icon-64.png" alt="" width="30" height="30">地下城II 圖鑑</h1><small id="tag">UNIQUE ×116</small></div>
   <div class="tabs" role="tablist" aria-label="資料類別">
     <button class="tab" role="tab" data-view="gear">獨特裝備</button>
     <button class="tab" role="tab" data-view="enchant">附魔</button>
