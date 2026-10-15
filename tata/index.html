@@ -1,0 +1,238 @@
+<!doctype html>
+<html lang="zh-Hant">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<link rel="manifest" href="manifest.json">
+<link rel="icon" href="icon-192.png">
+<link rel="apple-touch-icon" href="icon-180.png">
+<style>:root{padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}body{margin:0}[hidden]{display:none!important}</style>
+<title>塔塔冒險隊通關影片</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<meta name="theme-color" content="#1f6b4f">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Baloo+2:wght@600;800&family=Noto+Sans+TC:wght@400;500;700&display=swap">
+<style>
+/* Layout: sticky search header, chapter chip rail, stage grid per chapter, bottom sheet for one stage */
+:root{
+  --bg:#f2f6ef; --surface:#ffffff; --ink:#18322a; --muted:#5d7368; --line:#d7e2d6;
+  --leaf:#1f6b4f; --leaf-soft:#dcefe3; --sun:#f2b632; --sun-soft:#fff1cc; --boss:#c2452f; --boss-soft:#fbe1da;
+  --display:"Baloo 2", "Noto Sans TC", system-ui, sans-serif;
+  --body:"Noto Sans TC", system-ui, -apple-system, "PingFang TC", sans-serif;
+}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){
+  --bg:#0f1a16; --surface:#17261f; --ink:#e4efe7; --muted:#9db3a6; --line:#2a3d34;
+  --leaf:#5fc597; --leaf-soft:#1d3a2d; --sun:#f2c255; --sun-soft:#3a3018; --boss:#ff8a72; --boss-soft:#3d2420; color-scheme:dark}}
+:root[data-theme="dark"]{
+  --bg:#0f1a16; --surface:#17261f; --ink:#e4efe7; --muted:#9db3a6; --line:#2a3d34;
+  --leaf:#5fc597; --leaf-soft:#1d3a2d; --sun:#f2c255; --sun-soft:#3a3018; --boss:#ff8a72; --boss-soft:#3d2420; color-scheme:dark}
+*{box-sizing:border-box}
+body{background:var(--bg);color:var(--ink);font-family:var(--body);font-size:15px;line-height:1.55}
+a{color:var(--leaf)}
+.wrap{max-width:720px;margin:0 auto;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));padding-block:0 40px}
+header{position:sticky;top:env(safe-area-inset-top,0px);z-index:5;background:var(--bg);padding-block:12px 8px;display:grid;gap:10px;border-bottom:1px solid var(--line)}
+.brand{display:flex;align-items:baseline;justify-content:space-between;gap:8px;flex-wrap:wrap}
+h1{font-family:var(--display);font-weight:800;font-size:22px;margin:0;line-height:1.2}
+h1 small{font-family:var(--body);font-weight:500;font-size:13px;color:var(--muted);margin-left:6px}
+.prog{font-size:13px;color:var(--muted);font-variant-numeric:tabular-nums}
+.searchrow{display:flex;gap:8px}
+.searchrow input{flex:1;min-width:0;font:inherit;font-size:16px;padding:10px 12px;border-radius:12px;border:1.5px solid var(--line);background:var(--surface);color:var(--ink)}
+.searchrow input:focus{outline:none;border-color:var(--leaf)}
+button,.btn{font:inherit;cursor:pointer;border-radius:12px;border:none;padding:10px 14px;font-weight:700;text-decoration:none;display:inline-flex;align-items:center;justify-content:center;gap:6px}
+.primary{background:var(--leaf);color:var(--bg)}
+.ghost{background:var(--surface);color:var(--ink);border:1.5px solid var(--line)}
+button:focus-visible,.btn:focus-visible,.tile:focus-visible{outline:3px solid var(--sun);outline-offset:2px}
+.chips{display:flex;gap:6px;overflow-x:auto;padding-bottom:2px;scrollbar-width:none}
+.chips::-webkit-scrollbar{display:none}
+.chip{flex:none;padding:6px 12px;border-radius:999px;background:var(--surface);border:1.5px solid var(--line);font-family:var(--display);font-weight:600;font-size:15px;color:var(--ink)}
+.chip.on{background:var(--leaf);border-color:var(--leaf);color:var(--bg)}
+.chip .d{font-size:11px;opacity:.75;margin-left:4px;font-family:var(--body)}
+section.ch{padding-top:18px}
+.chhead{display:flex;align-items:baseline;gap:10px;flex-wrap:wrap}
+.chhead h2{font-family:var(--display);font-weight:800;font-size:28px;margin:0;line-height:1}
+.chhead .en{color:var(--muted);font-size:13px}
+.full{margin:12px 0 4px;display:grid;gap:8px}
+.vid{display:flex;align-items:center;gap:10px;padding:10px 12px;background:var(--surface);border:1px solid var(--line);border-radius:12px;color:var(--ink);text-decoration:none;min-width:0}
+.vid .ico{flex:none;width:34px;height:34px;border-radius:10px;background:var(--boss);color:#fff;display:grid;place-items:center;font-size:14px}
+.vid .t{min-width:0;flex:1}
+.vid .t b{display:block;font-weight:700;font-size:14px;overflow-wrap:anywhere}
+.vid .t span{display:block;font-size:12px;color:var(--muted)}
+.tag{font-size:11px;font-weight:700;padding:1px 6px;border-radius:6px;background:var(--sun-soft);color:var(--ink);margin-left:4px}
+.note{font-size:12px;color:var(--muted);margin:4px 0 10px}
+.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(54px,1fr));gap:6px}
+.tile{position:relative;aspect-ratio:1;max-width:100%;border-radius:12px;background:var(--surface);border:1.5px solid var(--line);display:grid;place-items:center;font-family:var(--display);font-weight:600;font-size:17px;color:var(--ink);padding:0;font-variant-numeric:tabular-nums}
+.tile.boss{background:var(--boss-soft);border-color:var(--boss);color:var(--boss)}
+.tile.has::after{content:"";position:absolute;top:5px;right:5px;width:7px;height:7px;border-radius:50%;background:var(--leaf)}
+.tile.done{background:var(--leaf-soft);border-color:var(--leaf-soft);color:var(--muted)}
+.tile.done::before{content:"✓";position:absolute;bottom:2px;right:6px;font-size:11px;color:var(--leaf)}
+.tile.here{box-shadow:0 0 0 3px var(--sun)}
+.legend{display:flex;gap:14px;flex-wrap:wrap;font-size:12px;color:var(--muted);margin:14px 0 0}
+.legend i{display:inline-block;width:10px;height:10px;border-radius:3px;margin-right:4px;vertical-align:-1px}
+.empty{color:var(--muted);font-size:13px;margin:8px 0}
+/* sheet */
+.scrim{position:fixed;inset:0;background:rgba(0,0,0,.4);z-index:9}
+.sheet{position:fixed;left:0;right:0;bottom:0;z-index:10;background:var(--bg);border-radius:20px 20px 0 0;max-height:86%;overflow-y:auto;
+  padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));padding-top:8px;padding-bottom:calc(20px + env(safe-area-inset-bottom,0px))}
+.sheet .in{max-width:720px;margin:0 auto;display:grid;gap:12px}
+.grab{width:40px;height:4px;border-radius:2px;background:var(--line);margin:4px auto 4px}
+.sh{display:flex;align-items:center;gap:10px}
+.sh h3{font-family:var(--display);font-weight:800;font-size:34px;margin:0;line-height:1;font-variant-numeric:tabular-nums}
+.badge{font-size:12px;font-weight:700;padding:3px 8px;border-radius:8px;background:var(--boss);color:#fff}
+.lbl{font-size:12px;font-weight:700;letter-spacing:.06em;color:var(--muted);margin-top:4px}
+.searchbtns{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.navrow{display:grid;grid-template-columns:1fr 1.4fr 1fr;gap:8px}
+.donebtn.on{background:var(--leaf-soft);color:var(--leaf)}
+@media (prefers-reduced-motion:no-preference){.sheet{animation:up .18s ease-out}@keyframes up{from{transform:translateY(30px);opacity:.6}}}
+</style>
+</head>
+<body>
+
+<div class="wrap">
+  <header>
+    <div class="brand">
+      <h1>塔塔冒險隊<small>主線通關影片</small></h1>
+      <span class="prog" id="prog"></span>
+    </div>
+    <form class="searchrow" id="f">
+      <input id="q" inputmode="text" placeholder="輸入關卡，例如 15-68 或 1568" autocomplete="off">
+      <button class="primary" type="submit">找</button>
+      <button class="ghost" type="button" id="next" title="跳到下一個還沒過的關卡">繼續</button>
+    </form>
+    <nav class="chips" id="chips" aria-label="章節"></nav>
+  </header>
+  <main id="main"></main>
+  <div class="legend">
+    <span><i style="background:var(--boss)"></i>BOSS 關（每 10 關）</span>
+    <span><i style="background:var(--leaf);border-radius:50%"></i>有該關專屬影片</span>
+    <span><i style="background:var(--leaf-soft)"></i>已過關</span>
+  </div>
+  <p class="note" style="margin-top:12px">影片來源：YouTube 公開影片（以英文版名稱 Clash of Critters 搜尋整理）。沒有專屬影片的關卡，可以看「整章影片」並用說明欄時間軸跳到該關，或按搜尋鈕直接在 YouTube、TikTok、巴哈姆特找。</p>
+</div>
+
+<div class="scrim" id="scrim" hidden></div>
+<div class="sheet" id="sheet" hidden role="dialog" aria-modal="true" aria-labelledby="st"><div class="in" id="sheetIn"></div></div>
+
+<script>
+const START_CH=15, START_ST=68, LAST_CH=40, PER=80;
+const NAMES={15:"Chrono Ruins",16:"Starfall Plains",17:"Windy Realm",18:"Silent Coast",20:"Thunder Peak",21:"Lone Temple",22:"Giant Grove",23:"Vulcan Gorge",24:"Frozen City",25:"Shady Wood",26:"Mystery Cave",27:"Torn Bridge",28:"Fiery Wastes",29:"Jade Lake",30:"Thunder Ruin",31:"Desert Oasis",32:"Olden Arch"};
+// 整章影片（影片說明欄有各關時間軸）
+const FULL={
+ 15:[["9FUWAp9UwYc","Chapter 15-1 to 15-80",""],["Mly_8-605Dk","Clash Of Critters 15-1 to 15-80",""]],
+ 16:[["shvzrrBet-4","Chapter 16-1 to 16-80",""]],
+ 17:[["HeRcoCClBbA","Chapter 17-1 to 17-80",""]],
+ 18:[["0-DkJARoFuw","Chapter 18-1 to 18-80",""]],
+ 19:[["e1Vk9KmE8aU","Chapter 19-1 to 19-80",""]],
+ 20:[["k_rcgR3JoCQ","第 20 章整章","舊版"]],
+ 23:[["xwBw1nE0t7k","第 23 章整章（23-1 to 23-80）",""]],
+ 25:[["XQ06Y07w5Fg","第 25 章整章",""]],
+ 26:[["GayrClEDKqw","Chapter 26-1 to 26-80",""],["3dZcd4c1C-M","第 26 章整章（另一版）",""]],
+ 27:[["_meDiRLW8Yo","Chapter 27-1 to 27-80",""]],
+ 28:[["nDyZIhT7xf4","第 28 章整章","舊版"]],
+ 29:[["LhfSqktQHgc","Chapter 29-1 to 29-80",""]],
+ 31:[["xLdhhIKPC_E","第 31 章整章","舊版"]],
+ 32:[["yG70K1fLFww","第 32 章整章","舊版"]]
+};
+// 單關短影片
+const STAGE={
+ "15-70":["MDPY9JCGWXs","RXhNYE2uNiA","D0VPxczBU3k"],"15-76":["JeJDinBdp6Y"],
+ "16-10":["bGSs6xYF0Dw"],"16-16":["b0-glZA0Th8"],"16-40":["LYjlkZBr5j0"],"16-50":["U8ioD9locb4"],"16-60":["opm4dKv5jRc"],"16-70":["1vurQAi1zNc"],"16-80":["2LrYygtGTac"],
+ "17-10":["cQ15SKNRRDs"],"17-20":["KAcJDqPiG4Y"],"17-26":["7STnWix1Z1Q"],"17-30":["X2tUHEfLIFs","lWcZd3TPcDQ"],"17-36":["OjUj9utwMiI"],"17-40":["EYmBBTZ3Sio"],"17-50":["sH51rpJXcVs","InvBiO211nE"],"17-60":["dQ6pBOKdK2M","LUgwqAQxcEY"],"17-80":["i3EfCR8hJlA"],
+ "18-20":["H4unE8iAhdQ"],"18-36":["co_sUh0IZw0"],"18-40":["_rAEo6h77rE"],"18-46":["0PCfdjjvERc"],"18-60":["iT2H5DWqJD8"],
+ "19-20":["m09JyAerspU"],"19-40":["185wUxozA8A"],"19-50":["sUue9eyvNM0"],"19-80":["0UeDYUgBSJI"],
+ "21-80":["oeoR_BO15jY"],"23-80":["1AoQruYNwDU"],
+ "24-10":["jUAAdEZEmrY","uBFN7bxb31c"],"24-60":["f_3qjoUn-mA"],"24-80":["gsEbz-b7tLI"],
+ "25-30":["0PY7ampRSzE"],"26-20":["P7kPc8ADfY4"],"29-40":["qzGBnSQjraM"]
+};
+const S={done:{},ch:START_CH};
+try{Object.assign(S,JSON.parse(localStorage.getItem("tata-v1")||"{}"))}catch(e){}
+const save=()=>{try{localStorage.setItem("tata-v1",JSON.stringify(S))}catch(e){}};
+const $=id=>document.getElementById(id);
+const first=c=>c===START_CH?START_ST:1;
+const key=(c,s)=>c+"-"+s;
+const esc=t=>String(t).replace(/[&<>"]/g,m=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[m]));
+const yt=id=>"https://www.youtube.com/watch?v="+id;
+const ytS=q=>"https://www.youtube.com/results?search_query="+encodeURIComponent(q);
+
+function vidRow(id,title,sub,tag){
+  return `<a class="vid" href="${yt(id)}" target="_blank" rel="noopener"><span class="ico">▶</span><span class="t"><b>${esc(title)}${tag?`<span class="tag">${esc(tag)}</span>`:""}</b><span>${esc(sub)}</span></span></a>`;
+}
+function stats(){
+  let tot=0,d=0;
+  for(let c=START_CH;c<=LAST_CH;c++)for(let s=first(c);s<=PER;s++){tot++;if(S.done[key(c,s)])d++}
+  $("prog").textContent=`已過 ${d} / ${tot} 關`;
+}
+function chips(){
+  let h="";
+  for(let c=START_CH;c<=LAST_CH;c++){
+    const has=FULL[c]||Object.keys(STAGE).some(k=>k.startsWith(c+"-"));
+    h+=`<button class="chip${c===S.ch?" on":""}" data-c="${c}">${c}${has?"":'<span class="d">搜尋</span>'}</button>`;
+  }
+  $("chips").innerHTML=h;
+  const on=$("chips").querySelector(".on"); if(on) on.scrollIntoView({inline:"center",block:"nearest"});
+}
+function render(here){
+  const c=S.ch;
+  let h=`<section class="ch"><div class="chhead"><h2>第 ${c} 章</h2>${NAMES[c]?`<span class="en">${NAMES[c]}</span>`:""}</div>`;
+  if(FULL[c]){
+    h+=`<div class="full">`+FULL[c].map(([id,t,tag])=>vidRow(id,t,"整章影片 · 用說明欄時間軸跳到想看的關卡",tag)).join("")+`</div>`;
+  } else {
+    h+=`<p class="empty">這章目前沒找到整章影片，點任一關可以直接搜尋。<a href="${ytS("Clash of Critters chapter "+c)}" target="_blank" rel="noopener">在 YouTube 找第 ${c} 章</a></p>`;
+  }
+  h+=`<p class="note">點關卡看影片${c===START_CH?"（從 15-68 開始）":""}</p><div class="grid">`;
+  for(let s=first(c);s<=PER;s++){
+    const k=key(c,s);
+    const cls=["tile",s%10===0?"boss":"",STAGE[k]?"has":"",S.done[k]?"done":"",here===k?"here":""].join(" ");
+    h+=`<button class="${cls}" data-k="${k}" aria-label="${k}">${s}</button>`;
+  }
+  h+=`</div></section>`;
+  $("main").innerHTML=h;
+  if(here){const t=$("main").querySelector(".here"); if(t) t.scrollIntoView({block:"center"});}
+}
+function go(c,here){S.ch=c;save();chips();render(here);if(!here)window.scrollTo({top:0})}
+
+function openStage(k){
+  const [c,s]=k.split("-").map(Number);
+  const boss=s%10===0, list=STAGE[k]||[], full=FULL[c]||[];
+  let h=`<div class="grab"></div><div class="sh"><h3 id="st">${k}</h3>${boss?'<span class="badge">BOSS</span>':""}</div>`;
+  if(list.length){h+=`<div class="lbl">這關的影片</div>`+list.map((id,i)=>vidRow(id,`${k} 通關影片${list.length>1?" "+(i+1):""}`,"YouTube 短影片","")).join("");}
+  if(full.length){h+=`<div class="lbl">整章影片（找說明欄的 ${k} 時間點）</div>`+full.map(([id,t,tag])=>vidRow(id,t,"整章影片",tag)).join("");}
+  if(!list.length&&!full.length){h+=`<p class="empty">還沒找到這關的專屬影片，用下面的搜尋最快。</p>`}
+  h+=`<div class="lbl">直接搜尋</div><div class="searchbtns">
+    <a class="btn ghost" target="_blank" rel="noopener" href="${ytS("塔塔冒險隊 "+k)}">YouTube 中文</a>
+    <a class="btn ghost" target="_blank" rel="noopener" href="${ytS("Clash of Critters "+k)}">YouTube 英文</a>
+    <a class="btn ghost" target="_blank" rel="noopener" href="https://www.tiktok.com/search?q=${encodeURIComponent("clash of critters "+k)}">TikTok</a>
+    <a class="btn ghost" target="_blank" rel="noopener" href="https://forum.gamer.com.tw/B.php?bsn=85848&qt=1&q=${encodeURIComponent(k)}">巴哈哈啦板</a></div>`;
+  const prev=s>first(c)?key(c,s-1):(c>START_CH?key(c-1,PER):null);
+  const nxt=s<PER?key(c,s+1):(c<LAST_CH?key(c+1,1):null);
+  h+=`<div class="navrow"><button class="ghost" id="pv" ${prev?"":"disabled"}>‹ ${prev||""}</button>
+    <button class="donebtn ${S.done[k]?"on":"ghost"}" id="dn">${S.done[k]?"✓ 已過關":"標記已過關"}</button>
+    <button class="ghost" id="nx" ${nxt?"":"disabled"}>${nxt||""} ›</button></div>
+    <button class="ghost" id="cl">關閉</button>`;
+  $("sheetIn").innerHTML=h;$("sheet").hidden=false;$("scrim").hidden=false;$("sheet").scrollTop=0;
+  $("pv").onclick=()=>prev&&jump(prev,true);
+  $("nx").onclick=()=>nxt&&jump(nxt,true);
+  $("dn").onclick=()=>{S.done[k]=!S.done[k];if(!S.done[k])delete S.done[k];save();stats();render(k);openStage(k)};
+  $("cl").onclick=close;
+}
+function close(){$("sheet").hidden=true;$("scrim").hidden=true}
+function jump(k,open){const c=+k.split("-")[0];if(c!==S.ch){S.ch=c;save();chips()}render(k);if(open)openStage(k)}
+function parse(v){
+  v=v.trim().replace(/[－—–_ .\/]/g,"-");
+  let m=v.match(/^(\d{1,3})-(\d{1,2})$/)||v.match(/^(\d{2})(\d{2})$/)||v.match(/^(\d{1,3})$/);
+  if(!m)return null;
+  const c=+m[1], s=m[2]?+m[2]:first(+m[1]);
+  if(c<START_CH||c>LAST_CH||s<1||s>PER||(c===START_CH&&s<START_ST))return null;
+  return key(c,s);
+}
+$("f").onsubmit=e=>{e.preventDefault();const k=parse($("q").value);
+  if(!k){$("q").value="";$("q").placeholder=`請輸入 ${START_CH}-${START_ST} 到 ${LAST_CH}-80 之間的關卡`;return}
+  $("q").blur();jump(k,true)};
+$("next").onclick=()=>{for(let c=START_CH;c<=LAST_CH;c++)for(let s=first(c);s<=PER;s++){const k=key(c,s);if(!S.done[k]){jump(k,true);return}}};
+$("chips").onclick=e=>{const b=e.target.closest(".chip");if(b)go(+b.dataset.c)};
+$("main").onclick=e=>{const t=e.target.closest(".tile");if(t)openStage(t.dataset.k)};
+$("scrim").onclick=close;
+document.addEventListener("keydown",e=>{if(e.key==="Escape")close()});
+if(S.ch<START_CH||S.ch>LAST_CH)S.ch=START_CH;
+stats();chips();render();
+</script>
+</body>
+</html>
