@@ -58,7 +58,11 @@ main .wrap{padding-block:14px 32px;display:flex;flex-direction:column;gap:10px}
 .ico.none::after{content:"⚡";font-size:24px}
 .rr{display:flex;flex-wrap:wrap;gap:4px 6px}
 .pill{font:inherit;font-size:12.5px;padding:1px 9px;border-radius:999px;border:1px solid var(--line);background:var(--bg);color:var(--ink);cursor:pointer}
-.pill:hover{border-color:var(--unique)}
+.rrsel{font:inherit;font-size:14px;width:100%;max-width:100%;padding:6px 10px;border-radius:8px;border:1px solid var(--line);background:var(--bg);color:var(--ink)}
+.rrinfo{display:flex;gap:10px;margin-top:8px;padding:8px 10px;border-radius:8px;border:1px solid var(--line);background:var(--bg)}
+.rrinfo img{width:36px;height:36px;border-radius:6px;image-rendering:pixelated;flex:none}
+.rrinfo b{color:var(--unique)}
+.rrinfo p{margin:2px 0 0;font-size:13px;color:var(--muted)}
 .vals{font-variant-numeric:tabular-nums}
 .badge{font-size:12px;font-weight:700;padding:1px 8px;border-radius:999px;border:1px solid var(--c);color:var(--c);align-self:start;margin-top:4px;white-space:nowrap}
 .name{min-width:0;align-self:center}
@@ -206,7 +210,7 @@ function render(){
         ${d.f ? `<dt>固定來源</dt><dd>${esc(d.f)}</dd>` : ''}
         ${d.o ? `<dt>也會掉落</dt><dd>${esc(d.o)}</dd>` : ''}
         <dt>流派</dt><dd>${d.a.length ? esc(d.a.join('、')) : '無'}</dd>
-        <dt>可重鑄</dt><dd><div class="rr">${d.rr.map(k => `<button class="pill" data-ge="${k}">${esc(GE[k].zh)}</button>`).join('')}</div></dd>
+        <dt>可重鑄</dt><dd><select class="rrsel" aria-label="${esc(d.zh)} 可重鑄效果"><option value="">選擇效果看介紹（${d.rr.length} 種）</option>${d.rr.map(k => `<option value="${k}">${esc(GE[k].zh)}・${esc(GE[k].c)}</option>`).join('')}</select><div class="rrinfo" hidden></div></dd>
         <dt>更多</dt><dd><a class="ext" href="${d.u}" target="_blank" rel="noopener">metabot 詳細頁 ↗</a></dd>
       </dl>
     </article>`).join('') : `<p class="empty">${st.fav ? '還沒有收藏，點卡片右上角的 ★ 加入。' : '找不到符合的裝備，換個關鍵字試試。'}</p>`;
@@ -230,9 +234,14 @@ $('#favBtn').onclick = () => { st.fav = !st.fav; sync(); };
 $('#reg').onchange = e => { st.reg = e.target.value; sync(); };
 $('#sort').onchange = e => { st.sort = e.target.value; sync(); };
 $('#q').oninput = e => { st.q = e.target.value; render(); };
+// 可重鑄下拉：選了直接在卡片內顯示該效果的介紹，不切換分頁
+$('#list').onchange = e => {
+  const s = e.target.closest('.rrsel'); if (!s) return;
+  const box = s.nextElementSibling, g = GE[s.value];
+  box.hidden = !g; if (!g) return;
+  box.innerHTML = `${ICON[g.i] ? `<img src="${ICON[g.i]}" alt="">` : ''}<div><b>${esc(g.zh)}</b> <span class="pct">${esc(g.en)}</span><br>${esc(g.d)}<p>數值：${esc(g.v)}</p><p>隨機出現：${esc(g.w)}</p></div>`;
+};
 $('#list').onclick = e => {
-  const g = e.target.closest('[data-ge]');
-  if (g) { st.view = 'effect'; st.sub = '全部'; st.q = GE[g.dataset.ge].zh; $('#q').value = st.q; sync(); window.scrollTo(0, 0); return; }
   const b = e.target.closest('.star'); if (!b) return;
   const k = b.dataset.en; favs.has(k) ? favs.delete(k) : favs.add(k);
   b.setAttribute('aria-pressed', favs.has(k)); save();
