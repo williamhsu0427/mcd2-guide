@@ -195,14 +195,48 @@ function totals(B){
   });
   return {acc, other};
 }
+// 自動配裝：關鍵字對到的效果才計分；每欄挑「固定效果＋最佳隨機效果（III 級）」分數最高的裝備，同分取掉落率高的
+const relE = (B, k) => B.k.some(w => GE[k].d.includes(w) || GE[k].zh.includes(w));
+function autoGear(B){
+  const g = {rnd:{}}, used = {};
+  // 同一種效果重複時分數遞減，讓機率和傷害之類的加成分散到不同效果
+  const w = (k, v) => v / (1 + (used[k] || 0));
+  SLOTS.forEach(([sl]) => {
+    let best = null;
+    DATA.filter(d => d.sl === sl).forEach(d => {
+      const fv = d.fx && GE[d.fx] && relE(B, d.fx) ? w(d.fx, num(GE[d.fx].vv.Unique) ?? num(d.s) ?? 10) : 0;
+      const kw = !d.fx && kwHit(B, d) ? 10 : 0;
+      let rk = '', rv = 0;
+      d.rr.forEach(k => { if (k === d.fx || !relE(B, k)) return; const v = w(k, num(GE[k].vv.III) || 0); if (v > rv) { rv = v; rk = k; } });
+      const sc = fv + kw + rv;
+      if (sc > 0 && (!best || sc > best.sc || (sc === best.sc && d.p > best.d.p))) best = {sc, d, rk};
+    });
+    // 這欄沒有任何符合流派的選項時，放固定效果屬「防禦」且數值最高的裝備，當作保命欄位
+    if (!best) {
+      DATA.filter(d => d.sl === sl && d.fx && GE[d.fx] && GE[d.fx].c === '防禦').forEach(d => {
+        const sc = num(GE[d.fx].vv.Unique) ?? num(d.s) ?? 0;
+        if (!best || sc > best.sc) best = {sc, d, rk:'', def:true};
+      });
+      if (best) (g.def || (g.def = [])).push(sl);
+    }
+    if (best) {
+      g[best.d.sl] = best.d.en;
+      if (best.d.fx && !best.def) used[best.d.fx] = (used[best.d.fx] || 0) + (relE(B, best.d.fx) ? 1 : 0);
+      if (best.rk) { g.rnd[sl] = [best.rk, 'III']; used[best.rk] = (used[best.rk] || 0) + 1; }
+    }
+  });
+  g.auto = true;
+  return g;
+}
 function renderPlan(B){
-  const p = $('#plan'), g = B.gear || (B.gear = {}), rnd = g.rnd || (g.rnd = {});
+  if (!B.gear || !Object.keys(B.gear).some(k => SLOTS.some(([sl]) => sl === k && B.gear[k]))) B.gear = autoGear(B);
+  const p = $('#plan'), g = B.gear, rnd = g.rnd || (g.rnd = {});
   const slotHtml = SLOTS.map(([sl, nm]) => {
     const pool = DATA.filter(d => d.sl === sl), hit = pool.filter(d => inBuild(B, d)), rest = pool.filter(d => !inBuild(B, d));
     const d = BYEN[g[sl]], r = rnd[sl] || [];
     const opt = x => `<option value="${esc(x.en)}"${x.en === g[sl] ? ' selected' : ''}>${esc(x.zh)}</option>`;
     return `<div class="slot"><div class="sico">${d && ICON[d.i] ? `<img src="${ICON[d.i]}" alt="">` : ''}</div>
-      <label for="pg-${sl}">${nm}</label>
+      <label for="pg-${sl}">${nm}${g.auto && (g.def || []).includes(sl) ? '・沒有符合流派的裝備，先放防禦裝' : ''}</label>
       <select id="pg-${sl}" data-slot="${sl}"><option value="">不裝備</option>${hit.length ? `<optgroup label="符合${esc(B.n)}">${hit.map(opt).join('')}</optgroup>` : ''}<optgroup label="其他">${rest.map(opt).join('')}</optgroup></select>
       ${d ? `<div class="rnd"><select id="pr-${sl}" data-rnd="${sl}" aria-label="${nm}隨機效果"><option value="">隨機欄位：不計</option>${d.rr.map(k => `<option value="${k}"${k === r[0] ? ' selected' : ''}>${esc(GE[k].zh)}・${esc(GE[k].d)}</option>`).join('')}</select>
         <select id="pt-${sl}" data-tier="${sl}" aria-label="${nm}隨機效果等級">${['I','II','III'].map(t => `<option${t === (r[1] || 'III') ? ' selected' : ''}>${t}</option>`).join('')}</select></div>` : ''}</div>`;
@@ -210,9 +244,9 @@ function renderPlan(B){
   const {acc, other} = totals(B);
   const lines = Object.entries(acc).map(([k, a]) => ({k, a, e:GE[k], hit:B.k.some(w => GE[k].d.includes(w) || GE[k].zh.includes(w))}))
     .sort((x, y) => (y.hit - x.hit) || (y.a.v - x.a.v));
-  p.innerHTML = `<h2>${esc(B.n)} 配裝<small>選好裝備後自動加總</small></h2>
+  p.innerHTML = `<div class="bhead"><h2>${esc(B.n)} 推薦配裝<small>${g.auto ? '已自動配好，可再自己換' : '已手動調整'}</small></h2><button class="btn pri" id="reauto">重新自動配裝</button></div>
     <div class="tot">${lines.length || other.length ? lines.map(({a, e, hit}) => `<div class="tline${hit ? ' hit' : ''}"><div>${esc(e.d)}</div><b>${a.txt && !a.v ? '有' : '+' + (Math.round(a.v * 10) / 10) + '%'}</b><span>${esc(e.zh)}・來自 ${esc(a.src.join('、'))}</span></div>`).join('')
-      + other.map(t => `<div class="tline"><div>${esc(t)}</div><b>—</b><span>無法換算成數值</span></div>`).join('') : '<p class="tnote">還沒選裝備。下面每一欄選一件，這裡會列出所有加成的總和。</p>'}</div>
+      + other.map(t => `<div class="tline"><div>${esc(t)}</div><b>—</b><span>無法換算成數值</span></div>`).join('') : '<p class="tnote">這個流派的關鍵字沒有對到任何可加總的效果，換個關鍵字，或在下面自己選裝備。</p>'}</div>
     <div class="slots">${slotHtml}</div>
     <p class="tnote">固定效果用「獨特」數值，隨機欄位用你選的等級；同一種效果直接相加（推算，實際疊加方式以遊戲內為準）。金底＝符合這個流派的關鍵字。</p>`;
 }
@@ -350,7 +384,7 @@ $('#bpanel').onclick = e => {
   else if (t.id === 'bsave') {
     const n = $('#bn').value.trim(), k = splitKw($('#bk').value);
     if (!n) { $('#bn').placeholder = '請先填流派名稱'; $('#bn').focus(); return; }
-    if (editing.id) Object.assign(builds.find(b => b.id === editing.id), {n, k});
+    if (editing.id) { const o = builds.find(b => b.id === editing.id); Object.assign(o, {n, k}); if (!o.gear || o.gear.auto) delete o.gear; }
     else { const id = 'u' + Date.now(); builds.push({id, n, k, pin:[]}); st.bid = id; }
     editing = null; saveB();
   } else if (t.id === 'bdel') {
@@ -363,12 +397,14 @@ $('#bpanel').onclick = e => {
 };
 $('#plan').onchange = e => {
   const t = e.target, B = curB(), g = B.gear || (B.gear = {}), rnd = g.rnd || (g.rnd = {});
+  g.auto = false;
   if (t.dataset.slot) { g[t.dataset.slot] = t.value; delete rnd[t.dataset.slot]; }
   else if (t.dataset.rnd) rnd[t.dataset.rnd] = [t.value, (rnd[t.dataset.rnd] || [])[1] || 'III'];
   else if (t.dataset.tier) rnd[t.dataset.tier] = [(rnd[t.dataset.tier] || [])[0] || '', t.value];
   else return;
   saveB(); renderPlan(B); renderPanel(B);
 };
+$('#plan').onclick = e => { if (e.target.id !== 'reauto') return; const B = curB(); B.gear = autoGear(B); saveB(); renderPlan(B); };
 $('#favBtn').onclick = () => { st.fav = !st.fav; sync(); };
 $('#reg').onchange = e => { st.reg = e.target.value; sync(); };
 $('#sort').onchange = e => { st.sort = e.target.value; sync(); };
