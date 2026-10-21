@@ -42,8 +42,8 @@ header.top .wrap{padding-block:12px 10px;display:flex;flex-direction:column;gap:
 .row::-webkit-scrollbar{display:none}
 .chip{flex:none;font:inherit;font-size:14px;font-weight:500;padding:6px 12px;border-radius:999px;border:1px solid var(--line);background:var(--surface);color:var(--ink);cursor:pointer}
 .chip[aria-pressed="true"]{background:var(--ink);color:var(--bg);border-color:var(--ink)}
-.tabs{display:grid;grid-template-columns:repeat(4,1fr);gap:4px;padding:3px;border-radius:12px;background:var(--line)}
-.tab{font:inherit;font-size:14px;font-weight:700;padding:7px 0;border:0;border-radius:9px;background:none;color:var(--muted);cursor:pointer}
+.tabs{display:grid;grid-template-columns:repeat(5,1fr);gap:4px;padding:3px;border-radius:12px;background:var(--line)}
+.tab{font:inherit;font-size:13.5px;white-space:nowrap;font-weight:700;padding:7px 0;border:0;border-radius:9px;background:none;color:var(--muted);cursor:pointer}
 .tab[aria-selected="true"]{background:var(--surface);color:var(--ink);box-shadow:0 1px 2px rgba(0,0,0,.12)}
 [hidden]{display:none!important}
 select{flex:none;font:inherit;font-size:14px;padding:6px 10px;border-radius:999px;border:1px solid var(--line);background:var(--surface);color:var(--ink);max-width:60vw}
@@ -79,6 +79,20 @@ dd{margin:0;min-width:0}
 .foot{color:var(--muted);font-size:12.5px;line-height:1.6}
 .foot a{color:inherit}
 .ext{color:var(--ranged);text-decoration:none;font-weight:500}
+.bpanel{display:flex;flex-direction:column;gap:8px;padding:10px 12px;border-radius:12px;border:1px solid var(--unique);background:var(--unique-soft)}
+.bhead{display:flex;align-items:center;justify-content:space-between;gap:8px;flex-wrap:wrap}
+.bhead b{font-size:16px}
+.bhead span{color:var(--muted);font-size:13px}
+.bform{display:grid;gap:6px}
+.bform label{font-size:12.5px;color:var(--muted)}
+.bform input{width:100%;font:inherit;font-size:16px;padding:8px 10px;border-radius:8px;border:1px solid var(--line);background:var(--surface);color:var(--ink)}
+.bbtns{display:flex;gap:8px;flex-wrap:wrap}
+.btn{font:inherit;font-size:13.5px;font-weight:500;padding:5px 12px;border-radius:8px;border:1px solid var(--line);background:var(--surface);color:var(--ink);cursor:pointer}
+.btn.pri{background:var(--ink);color:var(--bg);border-color:var(--ink)}
+.btn.del{color:var(--melee)}
+.chip.add{border-style:dashed;color:var(--unique)}
+mark{background:none;color:var(--unique);font-weight:700}
+.why{font-size:12px;color:var(--muted)}
 @media (prefers-reduced-motion:no-preference){.card{transition:border-color .15s}.card:hover{border-color:var(--unique)}}
 </style>
 
@@ -87,6 +101,7 @@ dd{margin:0;min-width:0}
   <div class="brand"><h1><img class="logo" src="icon-64.png" alt="" width="30" height="30">地下城II 圖鑑</h1><small id="tag">UNIQUE ×116</small></div>
   <div class="tabs" role="tablist" aria-label="資料類別">
     <button class="tab" role="tab" data-view="gear">獨特裝備</button>
+    <button class="tab" role="tab" data-view="build">我的流派</button>
     <button class="tab" role="tab" data-view="enchant">附魔</button>
     <button class="tab" role="tab" data-view="status">狀態效果</button>
     <button class="tab" role="tab" data-view="effect">裝備效果</button>
@@ -108,6 +123,7 @@ dd{margin:0;min-width:0}
 </div></header>
 
 <main><div class="wrap">
+  <div class="bpanel" id="bpanel" hidden></div>
   <div id="list"></div>
   <p class="foot">簡單難度不會隨機掉落獨特裝備，請在普通或困難刷。中文名為非官方譯名；附魔數值為最高 III 級。每件獨特裝備有 1 個固定效果＋1 個隨機效果欄位，鐵匠升到 3 級後可用回響碎片重鑄隨機欄位；「可重鑄」清單依流派與部位推算。資料整理自 <a href="https://metabot.gg/en/minecraft-dungeons-2/uniques" target="_blank" rel="noopener">metabot.gg</a> （含裝備圖示）與 <a href="https://mobalytics.gg/gamebase/guides/minecraft-dungeons-2-all-unique-items" target="_blank" rel="noopener">mobalytics.gg</a>（2026-10-15），請以遊戲內顯示為準。</p>
 </div></main>
@@ -131,8 +147,22 @@ const VIEWS = {
   effect: {tag:'EFFECT ×'+GEL.length, ph:'搜尋效果名稱、說明或流派', hint:'數值 I／II／III／獨特', subs:['全部','攻擊','防禦','輔助','僅固定']},
 };
 const CATN = {melee:'近戰',ranged:'遠程',armor:'防具'};
+VIEWS.build = {tag:'BUILD', ph:'在這個流派裡搜尋', hint:'依獨特技能的關鍵字配對'};
+// 我的流派：名稱＋關鍵字（比對獨特技能文字）＋手動加入的裝備；存在這支手機的瀏覽器
+const PRESET = [['爆擊流','暴擊、爆擊'],['火焰流','火焰、著火'],['冰霜流','冰霜'],['閃電流','閃電'],['毒素流','毒素'],['靈魂流','靈魂'],['暗影隱匿流','暗影隱匿'],['同伴流','同伴'],['神器流','神器'],['遠程流','遠程、投射物、射擊、彈藥、箭'],['近戰流','近戰攻擊、近戰暴擊、主要目標、次要目標'],['坦克流','受到的、閃避、反彈、最大生命值、治療'],['狀態流','狀態'],['機動流','翻滾、跳躍、移動速度'],['刷寶流','戰利品、綠寶石']]
+  .map(([n,k], i) => ({id:'p'+i, n, k:k.split('、'), pin:[]}));
+let builds = PRESET.map(b => ({...b}));
+try { const s = JSON.parse(localStorage.getItem('mcd2-builds') || 'null'); if (Array.isArray(s) && s.length) builds = s; } catch(e) {}
+const saveB = () => { try { localStorage.setItem('mcd2-builds', JSON.stringify(builds)); } catch(e) {} };
+const splitKw = v => v.split(/[、,，\s]+/).map(x => x.trim()).filter(Boolean);
+const curB = () => builds.find(b => b.id === st.bid) || builds[0];
+const kwHit = (b, d) => b.k.some(k => d.s.includes(k));
+const rrHit = (b, d) => d.rr.some(k => b.k.some(w => GE[k].zh.includes(w) || GE[k].d.includes(w)));
+const inBuild = (b, d) => kwHit(b, d) || b.pin.includes(d.en) || (st.brr && rrHit(b, d));
+const markKw = (txt, b) => { let h = esc(txt); if (b) b.k.forEach(k => { if (k) h = h.split(esc(k)).join(`<mark>${esc(k)}</mark>`); }); return h; };
+let editing = null;
 const $ = s => document.querySelector(s);
-let st = {view:'gear', sub:'全部', cat:'all', q:'', reg:'', sort:'', fav:false};
+let st = {view:'gear', sub:'全部', cat:'all', q:'', reg:'', sort:'', fav:false, bid:'p0', brr:false};
 let favs = new Set();
 try { favs = new Set(JSON.parse(localStorage.getItem('mcd2-favs') || '[]')); } catch(e) {}
 try { Object.assign(st, JSON.parse(localStorage.getItem('mcd2-state') || '{}'), {q:''}); } catch(e) {}
@@ -187,9 +217,11 @@ function renderGe(){
 }
 function render(){
   if (st.view === 'effect') return renderGe();
-  if (st.view !== 'gear') return renderFx();
-  const q = st.q.trim().toLowerCase();
+  if (st.view !== 'gear' && st.view !== 'build') return renderFx();
+  const q = st.q.trim().toLowerCase(), B = st.view === 'build' ? curB() : null;
+  if (B && !editing) renderPanel(B);
   let list = DATA.filter(d =>
+    (!B || inBuild(B, d)) &&
     (st.cat === 'all' || d.c === st.cat) &&
     (!st.fav || favs.has(d.en)) &&
     (!st.reg || d.r.includes(st.reg)) &&
@@ -203,7 +235,7 @@ function render(){
       ${icoHtml(d.i, '')}
       <div class="name"><b>${esc(d.zh)}</b><span>${esc(d.en)}</span></div>
       <button class="star" data-en="${esc(d.en)}" aria-pressed="${favs.has(d.en)}" aria-label="收藏 ${esc(d.zh)}">★</button>
-      <div class="skill">${esc(d.s)}</div>
+      <div class="skill">${markKw(d.s, B)}${B && !kwHit(B, d) ? `<div class="why">${B.pin.includes(d.en) ? '手動加入' : '隨機欄位可重鑄出相關效果'}</div>` : ''}</div>
       <dl>
         <dt>${CATN[d.c]}</dt><dd>${esc(d.t)}</dd>
         <dt>最佳刷點</dt><dd>${esc(d.l.replace(/，([\d.]+%)$/, ''))}${d.p ? ` <span class="pct">${d.p}%</span>` : ''}</dd>
@@ -211,37 +243,85 @@ function render(){
         ${d.o ? `<dt>也會掉落</dt><dd>${esc(d.o)}</dd>` : ''}
         <dt>流派</dt><dd>${d.a.length ? esc(d.a.join('、')) : '無'}</dd>
         <dt>可重鑄</dt><dd><select class="rrsel" aria-label="${esc(d.zh)} 可重鑄效果"><option value="">選擇效果看介紹（${d.rr.length} 種）</option>${d.rr.map(k => `<option value="${k}">${esc(GE[k].zh)}・${esc(GE[k].c)}</option>`).join('')}</select><div class="rrinfo" hidden></div></dd>
+        <dt>我的流派</dt><dd>${B ? (B.pin.includes(d.en) ? `<button class="btn" data-unpin="${esc(d.en)}">從${esc(B.n)}移出</button>` : (kwHit(B, d) ? `符合關鍵字` : '')) : `<select class="rrsel addb" data-en="${esc(d.en)}" aria-label="把 ${esc(d.zh)} 加入流派"><option value="">${esc(builds.filter(b => kwHit(b, d) || b.pin.includes(d.en)).map(b => b.n).join('、') || '加入流派…')}</option>${builds.filter(b => !kwHit(b, d) && !b.pin.includes(d.en)).map(b => `<option value="${b.id}">加入 ${esc(b.n)}</option>`).join('')}</select>`}</dd>
         <dt>更多</dt><dd><a class="ext" href="${d.u}" target="_blank" rel="noopener">metabot 詳細頁 ↗</a></dd>
       </dl>
-    </article>`).join('') : `<p class="empty">${st.fav ? '還沒有收藏，點卡片右上角的 ★ 加入。' : '找不到符合的裝備，換個關鍵字試試。'}</p>`;
+    </article>`).join('') : `<p class="empty">${B ? '這個流派還沒有裝備，改一下關鍵字，或到「獨特裝備」分頁用卡片上的「我的流派」選單加入。' : st.fav ? '還沒有收藏，點卡片右上角的 ★ 加入。' : '找不到符合的裝備，換個關鍵字試試。'}</p>`;
+}
+function renderPanel(B){
+  const p = $('#bpanel');
+  if (editing) {
+    p.innerHTML = `<div class="bform">
+      <label for="bn">流派名稱</label><input id="bn" value="${esc(editing.n)}" placeholder="例如：爆擊流">
+      <label for="bk">關鍵字（用、或空白分隔，會比對獨特技能文字）</label><input id="bk" value="${esc(editing.k.join('、'))}" placeholder="例如：暴擊、爆擊">
+      <div class="bbtns"><button class="btn pri" id="bsave">儲存</button><button class="btn" id="bcancel">取消</button>${editing.id ? '<button class="btn del" id="bdel">刪除這個流派</button>' : ''}</div></div>`;
+    return;
+  }
+  p.innerHTML = `<div class="bhead"><div><b>${esc(B.n)}</b> <span>關鍵字：${esc(B.k.join('、') || '（無）')}${B.pin.length ? `・手動加入 ${B.pin.length} 件` : ''}</span></div>
+    <div class="bbtns"><button class="btn" id="bedit">編輯</button></div></div>
+    <div class="bbtns"><button class="chip" id="brr" aria-pressed="${st.brr}">也列出可重鑄出相關效果的裝備</button></div>`;
 }
 function sync(){
   const v = VIEWS[st.view] ? st.view : (st.view = 'gear');
   document.querySelectorAll('.tab').forEach(b => b.setAttribute('aria-selected', b.dataset.view === v));
-  document.querySelectorAll('.gear-only').forEach(e => e.hidden = v !== 'gear');
+  document.querySelectorAll('.gear-only').forEach(e => e.hidden = v !== 'gear' && v !== 'build');
+  $('#bpanel').hidden = v !== 'build';
   const sub = $('#sub'); sub.hidden = v === 'gear';
+  if (v === 'build') { if (!builds.some(b => b.id === st.bid)) st.bid = builds[0] && builds[0].id; sub.innerHTML = builds.map(b => `<button class="chip" data-bid="${b.id}" aria-pressed="${b.id === st.bid && !editing}">${esc(b.n)}</button>`).join('') + `<button class="chip add" data-bid="new">＋ 新增流派</button><button class="chip" data-bid="reset">還原預設</button>`; }
   if (VIEWS[v].subs) { if (!VIEWS[v].subs.includes(st.sub)) st.sub = '全部'; sub.innerHTML = VIEWS[v].subs.map(s => `<button class="chip" data-sub="${s}" aria-pressed="${s === st.sub}">${s}</button>`).join(''); }
   $('#tag').textContent = VIEWS[v].tag; $('#q').placeholder = VIEWS[v].ph; $('#hint').textContent = VIEWS[v].hint;
   document.querySelectorAll('.chip[data-cat]').forEach(b => b.setAttribute('aria-pressed', b.dataset.cat === st.cat));
   $('#favBtn').setAttribute('aria-pressed', st.fav);
   $('#reg').value = st.reg; $('#sort').value = st.sort;
+  if (v === 'build' && editing) renderPanel(curB());
   render(); save();
 }
 document.querySelectorAll('.chip[data-cat]').forEach(b => b.onclick = () => { st.cat = b.dataset.cat; sync(); });
 document.querySelectorAll('.tab').forEach(b => b.onclick = () => { st.view = b.dataset.view; st.sub = '全部'; st.q = ''; $('#q').value = ''; sync(); window.scrollTo(0, 0); });
-$('#sub').onclick = e => { const b = e.target.closest('[data-sub]'); if (b) { st.sub = b.dataset.sub; sync(); } };
+$('#sub').onclick = e => {
+  const b = e.target.closest('[data-sub]'); if (b) { st.sub = b.dataset.sub; sync(); return; }
+  const c = e.target.closest('[data-bid]'); if (!c) return;
+  const id = c.dataset.bid;
+  if (id === 'new') editing = {id:null, n:'', k:[], pin:[]};
+  else if (id === 'reset') { if (c.dataset.confirm) { builds = PRESET.map(b => ({...b, pin:[]})); st.bid = 'p0'; editing = null; saveB(); } else { c.dataset.confirm = 1; c.textContent = '再按一次確認還原'; return; } }
+  else { st.bid = id; editing = null; }
+  sync();
+};
+$('#bpanel').onclick = e => {
+  const t = e.target.closest('button'); if (!t) return;
+  if (t.id === 'bedit') { const B = curB(); editing = {...B, k:[...B.k], pin:[...B.pin]}; }
+  else if (t.id === 'brr') st.brr = !st.brr;
+  else if (t.id === 'bcancel') editing = null;
+  else if (t.id === 'bsave') {
+    const n = $('#bn').value.trim(), k = splitKw($('#bk').value);
+    if (!n) { $('#bn').placeholder = '請先填流派名稱'; $('#bn').focus(); return; }
+    if (editing.id) Object.assign(builds.find(b => b.id === editing.id), {n, k});
+    else { const id = 'u' + Date.now(); builds.push({id, n, k, pin:[]}); st.bid = id; }
+    editing = null; saveB();
+  } else if (t.id === 'bdel') {
+    if (!t.dataset.confirm) { t.dataset.confirm = 1; t.textContent = '再按一次確認刪除'; return; }
+    builds = builds.filter(b => b.id !== editing.id); editing = null;
+    if (!builds.length) builds = PRESET.map(b => ({...b, pin:[]}));
+    st.bid = builds[0].id; saveB();
+  } else return;
+  sync();
+};
 $('#favBtn').onclick = () => { st.fav = !st.fav; sync(); };
 $('#reg').onchange = e => { st.reg = e.target.value; sync(); };
 $('#sort').onchange = e => { st.sort = e.target.value; sync(); };
 $('#q').oninput = e => { st.q = e.target.value; render(); };
 // 可重鑄下拉：選了直接在卡片內顯示該效果的介紹，不切換分頁
 $('#list').onchange = e => {
+  const a = e.target.closest('.addb');
+  if (a) { const b = builds.find(x => x.id === a.value); if (b) { b.pin.push(a.dataset.en); saveB(); render(); } return; }
   const s = e.target.closest('.rrsel'); if (!s) return;
   const box = s.nextElementSibling, g = GE[s.value];
   box.hidden = !g; if (!g) return;
   box.innerHTML = `${ICON[g.i] ? `<img src="${ICON[g.i]}" alt="">` : ''}<div><b>${esc(g.zh)}</b> <span class="pct">${esc(g.en)}</span><br>${esc(g.d)}<p>數值：${esc(g.v)}</p><p>隨機出現：${esc(g.w)}</p></div>`;
 };
 $('#list').onclick = e => {
+  const u = e.target.closest('[data-unpin]');
+  if (u) { const B = curB(); B.pin = B.pin.filter(x => x !== u.dataset.unpin); saveB(); render(); return; }
   const b = e.target.closest('.star'); if (!b) return;
   const k = b.dataset.en; favs.has(k) ? favs.delete(k) : favs.add(k);
   b.setAttribute('aria-pressed', favs.has(k)); save();
