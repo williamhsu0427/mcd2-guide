@@ -131,6 +131,13 @@ mark{background:none;color:var(--unique);font-weight:700}
     <button class="chip" data-cat="armor" aria-pressed="false">防具</button>
     <button class="chip" id="favBtn" aria-pressed="false">★ 收藏</button>
   </div>
+  <div class="row" id="slotRow" role="group" aria-label="防具部位" hidden>
+    <button class="chip" data-slot="" aria-pressed="true">所有部位</button>
+    <button class="chip" data-slot="H" aria-pressed="false">頭</button>
+    <button class="chip" data-slot="C" aria-pressed="false">胸</button>
+    <button class="chip" data-slot="L" aria-pressed="false">腿</button>
+    <button class="chip" data-slot="F" aria-pressed="false">腳</button>
+  </div>
   <div class="row" id="sub" role="group" aria-label="篩選" hidden></div>
   <div class="row gear-only">
     <select id="reg" aria-label="區域"><option value="">所有區域</option></select>
@@ -312,6 +319,7 @@ function render(){
   let list = DATA.filter(d =>
     (!B || inBuild(B, d)) &&
     (st.cat === 'all' || d.c === st.cat) &&
+    (st.cat !== 'armor' || !st.slot || d.sl === st.slot) &&
     (!st.fav || favs.has(d.en)) &&
     (!st.reg || d.r.includes(st.reg)) &&
     (!q || [d.zh,d.en,d.t,d.s,d.l,d.f,d.o,d.a.join(' '),d.rr.map(k => GE[k].zh).join(' ')].join(' ').toLowerCase().includes(q)));
@@ -360,12 +368,15 @@ function sync(){
   if (VIEWS[v].subs) { if (!VIEWS[v].subs.includes(st.sub)) st.sub = '全部'; sub.innerHTML = VIEWS[v].subs.map(s => `<button class="chip" data-sub="${s}" aria-pressed="${s === st.sub}">${s}</button>`).join(''); }
   $('#tag').textContent = VIEWS[v].tag; $('#q').placeholder = VIEWS[v].ph; $('#hint').textContent = VIEWS[v].hint;
   document.querySelectorAll('.chip[data-cat]').forEach(b => b.setAttribute('aria-pressed', b.dataset.cat === st.cat));
+  $('#slotRow').hidden = st.cat !== 'armor' || (v !== 'gear' && v !== 'build');
+  document.querySelectorAll('#slotRow .chip').forEach(b => b.setAttribute('aria-pressed', b.dataset.slot === (st.slot || '')));
   $('#favBtn').setAttribute('aria-pressed', st.fav);
   $('#reg').value = st.reg; $('#sort').value = st.sort;
   if (v === 'build' && editing) renderPanel(curB());
   render(); save();
 }
 document.querySelectorAll('.chip[data-cat]').forEach(b => b.onclick = () => { st.cat = b.dataset.cat; sync(); });
+document.querySelectorAll('#slotRow .chip').forEach(b => b.onclick = () => { st.slot = b.dataset.slot; sync(); });
 document.querySelectorAll('.tab').forEach(b => b.onclick = () => { st.view = b.dataset.view; st.sub = '全部'; st.q = ''; $('#q').value = ''; sync(); window.scrollTo(0, 0); });
 $('#sub').onclick = e => {
   const b = e.target.closest('[data-sub]'); if (b) { st.sub = b.dataset.sub; sync(); return; }
